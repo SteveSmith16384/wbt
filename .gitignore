@@ -3,3 +3,5 @@
 *.class
 wbt.hi
 wbtempest.jar
+**/.svn
+

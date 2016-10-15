@@ -7,11 +7,8 @@ import javax.swing.JFrame;
  * @author ugliest
  *
  */
-public class WBTempest extends JFrame {
+public class WBTempest extends JFrame  {
 
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 183599951344L;
 
 	public WBTempest() {
@@ -24,6 +21,8 @@ public class WBTempest extends JFrame {
         setTitle("WBTempest");
         setResizable(false);
         setVisible(true);
+        
+        board.startGame();
     }
 
     public static void main(String[] args) {

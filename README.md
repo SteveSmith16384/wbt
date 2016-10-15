@@ -5,6 +5,8 @@ wbt
 
 a tempest (80's arcade game) clone in java, and a small project for playing with git.
 
+Retro-fitted to be multiplayer using Generic Multiplayer Connctor.
+
 playable, and fairly true to the original, though not a full feature-complete clone.
 
 <strong>game summary</strong> for those not familiar with tempest:<br/>
