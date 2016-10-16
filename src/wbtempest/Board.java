@@ -32,6 +32,8 @@ import com.scs.gmc.StartGameOptions;
  * Game is initiated by instantiating one of these.
  * 
  * @author ugliest
+ * 
+ * Todo - send msg if lost life
  *
  */
 public class Board extends JPanel implements ActionListener, IGameClient {
@@ -155,14 +157,11 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	public void startGame()
 	{
 		if (connector != null) {
+			multiplayer_msg = "Waiting for players..."; // Must be before we join game, otherwise it may have started
 			connector.joinGame();
-			multiplayer_msg = "Waiting for players...";
-			this.repaint();
-			connector.waitForStage(GameStage.IN_PROGRESS);
-			multiplayer_msg = "Game started!";
 		}
 		lives = START_LIVES;
-		gameover=false;
+		gameover = false;
 		score = 0;
 		levelnum = 1;
 
@@ -239,10 +238,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		}
 	}
 
+	
 	public void addNotify() {
 		super.addNotify();
 	}
 
+	
 	/**
 	 * This is how we achieve the 3D effect.  The z-axis is assumed to
 	 * point "into" the screen, away from the player.  interpolation is
@@ -388,10 +389,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		g2d.drawString(text, (getWidth()-this.getFontMetrics(fnt).stringWidth(text))/2, y);
 	}
 
+	
 	private void drawCenteredText(Graphics2D g2d, String text, float y) {
 		drawCenteredText(g2d, text, y, stdfnt);
 	}
 
+	
 	/**
 	 * Main refresh routine.
 	 */
@@ -602,10 +605,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 				if (boardpov > -LEVEL_DEPTH *5)
 					boardpov -= GAME_OVER_BOARDSPEED;
 				else {
-					gameover=true;
-					if (connector != null) {
-						connector.sendOutOfGame();
+					if (gameover == false) {
+						if (connector != null) {
+							connector.sendOutOfGame();
+						}
 					}
+					gameover=true;
 				}
 			}
 		}
@@ -915,7 +920,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 
 	@Override
 	public void gameStarted() {
-		multiplayer_msg = "Game started!";
+		multiplayer_msg = "Game started!"; // todo - not being rcvd
 	}
 
 	@Override
@@ -923,16 +928,19 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		multiplayer_msg = "Player " + name + " has joined";
 	}
 
+	
 	@Override
 	public void playerLeft(String name) {
 		multiplayer_msg = "Player " + name + " has left";
 	}
 
+	
 	@Override
 	public void serverDown(long arg0) {
 		multiplayer_msg = "Server down?";
 	}
 
+	
 	public static void p(String s) {
 		System.out.println(s);
 	}
