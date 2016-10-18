@@ -15,12 +15,15 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
+import com.scs.gmc.ClientPlayerData;
 import com.scs.gmc.ConnectorMain;
 import com.scs.gmc.ConnectorMain.GameStage;
 import com.scs.gmc.IGameClient;
@@ -33,20 +36,21 @@ import com.scs.gmc.StartGameOptions;
  * 
  * @author ugliest
  * 
- * Todo - send msg if lost life
- *
  */
 public class Board extends JPanel implements ActionListener, IGameClient {
 
 	private static final long serialVersionUID = -1467405293079888602L;
 
 	// Multiplayer stuff
-	private static final boolean MULTI_PLAYER = true;
 	private static final int CODE_LEVEL_NUMBER = 1;
 	private static final int CODE_LEVEL_COMPLETE = 2;
+	private static final int CODE_CURRENT_SCORE = 3;
+
 	private ConnectorMain connector;
-	private boolean all_exes_fire = false;
+	private int all_exes_fire = 0;
 	private String multiplayer_msg = null;
+	private final Map<String, Integer> scores = new HashMap<String, Integer>(); // Player names and scores
+	// End of multiplayer stuff
 
 	private static Random r = new Random();
 	static int B_WIDTH = 800;
@@ -136,20 +140,19 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		// force soundmanager singleton to initialize
 		SoundManager.get();
 
-		if (Board.MULTI_PLAYER) {
-			connector = StartGameOptions.ShowOptionsAndConnect(this);
-			if (connector == null) {
-				System.exit(0);
-			}
+		connector = StartGameOptions.ShowOptionsAndConnect(this);
+		if (connector != null) {
 			multiplayer_msg = "Connected to server";
+		} else {
+			multiplayer_msg = "Playing single-player";
 		}
 
 		// start our ghetto timer loop
 		timer = new Timer(15, this);  // appx 60fps
 		timer.start();
 
-		//startGame();
 	}
+
 
 	/**
 	 * Initialize the game.
@@ -157,6 +160,9 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	public void startGame()
 	{
 		if (connector != null) {
+			synchronized (scores) {
+				scores.clear();
+			}
 			multiplayer_msg = "Waiting for players..."; // Must be before we join game, otherwise it may have started
 			connector.joinGame();
 		}
@@ -164,6 +170,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		gameover = false;
 		score = 0;
 		levelnum = 1;
+		all_exes_fire = 0;
 
 		initLevel();
 	}
@@ -238,12 +245,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		}
 	}
 
-	
+
 	public void addNotify() {
 		super.addNotify();
 	}
 
-	
+
 	/**
 	 * This is how we achieve the 3D effect.  The z-axis is assumed to
 	 * point "into" the screen, away from the player.  interpolation is
@@ -389,12 +396,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		g2d.drawString(text, (getWidth()-this.getFontMetrics(fnt).stringWidth(text))/2, y);
 	}
 
-	
+
 	private void drawCenteredText(Graphics2D g2d, String text, float y) {
 		drawCenteredText(g2d, text, y, stdfnt);
 	}
 
-	
+
 	/**
 	 * Main refresh routine.
 	 */
@@ -404,6 +411,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		super.paint(g); // will clear screen
 
 		if (multiplayer_msg != null) {
+			g2d.setFont(stdfnt);
 			g.setColor(Color.white);
 			drawCenteredText(g2d, multiplayer_msg, (int)(getHeight() * .9f));
 		}
@@ -413,7 +421,22 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 			g.setColor(Color.white);
 			g.setFont(bigfnt);
 			drawCenteredText(g2d, "PAUSED", getHeight() / 2);
-			return;
+			//return;
+		}
+
+		// Draw hi-scores
+		synchronized (scores) {
+			g.setColor(Color.white);
+			g2d.setFont(stdfnt);
+			if (scores.size() > 0) {
+				int y = 100;
+				int inc = (int)(this.getFontMetrics(stdfnt).getHeight() * 1.1f);
+				for (String name : this.scores.keySet()) {
+					int theirscore = scores.get(name);
+					g2d.drawString(name + ": " + theirscore, 40, y);
+					y += inc;
+				}
+			}
 		}
 
 		if (!gameover && crawler != null) {
@@ -423,8 +446,9 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 			// draw crawler
 			if (crawler.isVisible()){
 				Color c = Color.YELLOW;
-				if (dptLeft > 0)
+				if (dptLeft > 0) {
 					c = new Color(r.nextInt(255),r.nextInt(255),r.nextInt(255));
+				}
 				drawObject(g2d, c, crawler.getCoords(), crawlerzoffset);
 			}
 
@@ -486,8 +510,9 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		g2d.setColor(Color.GREEN);
 		g2d.setFont(bigfnt);
 		g2d.drawString(Integer.toString(score), 100, 50);
-		if (score > hiscore)
+		if (score > hiscore) {
 			hiscore = score;
+		}
 		g2d.setFont(stdfnt);
 		drawCenteredText(g2d, "HIGH: " + hiscore, 30);
 		drawCenteredText(g2d, "LEVEL: "+levelnum, 55);
@@ -514,21 +539,26 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 				}
 			}
 
-			FileWriter f=null;
-			try {
-				f = new FileWriter("wbt.hi");
-				f.write(Integer.toString(hiscore));
-				f.close();
-			}
-			catch (Exception e)
-			{ // if we can't write the hi score file...oh well.	
-			}
-
 		}
 
 		Toolkit.getDefaultToolkit().sync();
 		g.dispose();
 	}
+
+
+	private void saveHiScore() {
+		FileWriter f=null;
+		try {
+			f = new FileWriter("wbt.hi");
+			f.write(Integer.toString(hiscore));
+			f.close();
+		}
+		catch (Exception e)
+		{ // if we can't write the hi score file...oh well.	
+		}
+
+	}
+
 
 	private boolean isPlayerDead(){
 		return (clearboard && !levelcleared) || crawlerSpiked;
@@ -607,6 +637,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 				else {
 					if (gameover == false) {
 						if (connector != null) {
+							connector.sendStringDataByTCP(connector.getPlayerName() + " is out of the game!");
 							connector.sendOutOfGame();
 						}
 					}
@@ -651,17 +682,21 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 								ex.setPod(false);
 							}
 						}
-						if (all_exes_fire || (ex.getZ() < LEVEL_DEPTH && r.nextInt(10000) < levelinfo.getExFireBPS())) {
-							// this ex fires a missile
-							enemymissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
-							SoundManager.get().play(Sound.ENEMYFIRE);
+						if (ex.getZ() < LEVEL_DEPTH) {
+							if (all_exes_fire > 0 || r.nextInt(10000) < levelinfo.getExFireBPS()) {
+								// this ex fires a missile
+								enemymissiles.add(new Missile(ex.getColumn(), ex.getZ(), false));
+								SoundManager.get().play(Sound.ENEMYFIRE);
+							}
 						}
 					}
 					else {
 						exes.remove(i);
 					}
 				}
-				all_exes_fire = false;
+				if (all_exes_fire > 0) {
+					all_exes_fire--;
+				}
 
 				for (Spike s : spikes) {
 					if (s.isVisible()) {
@@ -708,6 +743,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		clearboard = true;
 		dptLeft = DEATH_PAUSE_TICKS;
 		SoundManager.get().play(Sound.CRAWLERDEATH);
+		if (this.connector != null) {
+			connector.sendStringDataByTCP(connector.getPlayerName() + " has lost a life!");
+		}
+		if (lives <= 0) {
+			this.saveHiScore();
+		}
 	}
 
 	/**
@@ -761,6 +802,8 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 				}
 			}
 		}
+
+		int old_score = score;
 
 		// check player's missiles vs everything
 		int ncols = levelinfo.getColumns().size();
@@ -818,14 +861,26 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 						s.impact();
 						m.setVisible(false);
 						score += Spike.SPIKE_SCORE;
-						if (s.isSpinnerVisible() &&
-								Math.abs(s.getSpinnerZ() - m.getZPos()) < Missile.HEIGHT) {
+						if (s.isSpinnerVisible() && Math.abs(s.getSpinnerZ() - m.getZPos()) < Missile.HEIGHT) {
 							s.setSpinnerVisible(false);
 							score += Spike.SPINNER_SCORE;
 						}
 					}
 				}
 			}
+		}
+		if (old_score != score) {
+			sendScore();
+		}
+	}
+
+
+	private void sendScore() {
+		if (this.connector != null) {
+			synchronized (scores) {
+				this.scores.put(connector.getPlayerName(), score);
+			}
+			this.connector.sendKeyValueDataByUDP(CODE_CURRENT_SCORE, score);
 		}
 	}
 
@@ -872,7 +927,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 			} else if (key == CODE_LEVEL_COMPLETE) {
 				p("An opponent has completed a level");
 				// All exe's fire a missile
-				this.all_exes_fire = true;
+				this.all_exes_fire++;
 			} else {
 				// ignore
 			}
@@ -884,17 +939,23 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 
 	@Override
 	public void dataReceivedByUDP(long time, int fromplayerid, int key, int value) {
-
+		ClientPlayerData player = this.connector.players.get(fromplayerid);
+		if (player != null) {
+			// Update their score
+			synchronized (scores) {
+				this.scores.put(player.name, value);
+			}
+		}
 	}
 
 	@Override
 	public void dataReceivedByTCP(int fromplayerid, String data) {
-
+		this.multiplayer_msg = data;
 	}
 
 	@Override
 	public void dataReceivedByUDP(long time, int fromplayerid, String data) {
-
+		this.multiplayer_msg = data;
 	}
 
 	@Override
@@ -920,7 +981,8 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 
 	@Override
 	public void gameStarted() {
-		multiplayer_msg = "Game started!"; // todo - not being rcvd
+		multiplayer_msg = "Game started!";
+		sendScore();
 	}
 
 	@Override
@@ -928,19 +990,19 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		multiplayer_msg = "Player " + name + " has joined";
 	}
 
-	
+
 	@Override
 	public void playerLeft(String name) {
 		multiplayer_msg = "Player " + name + " has left";
 	}
 
-	
+
 	@Override
 	public void serverDown(long arg0) {
 		multiplayer_msg = "Server down?";
 	}
 
-	
+
 	public static void p(String s) {
 		System.out.println(s);
 	}
