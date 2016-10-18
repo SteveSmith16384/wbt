@@ -3,11 +3,11 @@ wbt
 
 "wannabe tempest"
 
-a tempest (80's arcade game) clone in java, and a small project for playing with git.
+A tempest (80's arcade game) clone in java, and a small project for playing with git.
 
 Retro-fitted to be multiplayer using Generic Multiplayer Connctor.
 
-playable, and fairly true to the original, though not a full feature-complete clone.
+Playable, and fairly true to the original, though not a full feature-complete clone.  Just run wbt.jar.
 
 <strong>game summary</strong> for those not familiar with tempest:<br/>
 the player (you) has a crawler, with which you must maneuver around the front of the current level and destroy the enemies coming forward towards you, out of the center of the screen.  the enemies are:<br/>
@@ -35,4 +35,7 @@ arrow keys to move, spacebar to fire, and "S" to superzap.
     $ java wbtempest.WBTempest
 
 
+### Credits:
+Original game programmed by alwzac (https://github.com/awlzac)
+Multiplayer added by SCS (https://github.com/SteveSmith16384/)
 
