@@ -140,7 +140,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		// force soundmanager singleton to initialize
 		SoundManager.get();
 
-		connector = StartGameOptions.ShowOptionsAndConnect(this);
+		connector = StartGameOptions.ShowOptionsAndConnect(this, "Multiplayer Tempest");
 		if (connector != null) {
 			multiplayer_msg = "Connected to server";
 		} else {
@@ -939,7 +939,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 
 	@Override
 	public void dataReceivedByUDP(long time, int fromplayerid, int key, int value) {
-		ClientPlayerData player = this.connector.players.get(fromplayerid);
+		ClientPlayerData player = this.connector.getPlayerByID(fromplayerid);
 		if (player != null) {
 			// Update their score
 			synchronized (scores) {
