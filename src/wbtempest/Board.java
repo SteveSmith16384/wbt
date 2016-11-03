@@ -140,7 +140,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		// force soundmanager singleton to initialize
 		SoundManager.get();
 
-		connector = StartGameOptions.ShowOptionsAndConnect(this, "Multiplayer Tempest");
+		connector = StartGameOptions.ShowOptionsAndConnect(this, "Multiplayer Tempest", null);
 		if (connector != null) {
 			multiplayer_msg = "Connected to server";
 		} else {
