@@ -13,6 +13,7 @@ import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -182,7 +183,11 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	private void initLevel() {
 		if (connector != null) {
 			if (levelnum > 1) {
-				connector.sendKeyValueDataByTCP(CODE_LEVEL_NUMBER, levelnum);
+				try {
+					connector.sendKeyValueDataByTCP(CODE_LEVEL_NUMBER, levelnum);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		levelinfo = new Level (levelnum, B_WIDTH, B_HEIGHT);
@@ -637,8 +642,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 				else {
 					if (gameover == false) {
 						if (connector != null) {
+							try {
 							connector.sendStringDataByTCP(connector.getPlayerName() + " is out of the game!");
 							connector.sendOutOfGame();
+							} catch (IOException ex) {
+								ex.printStackTrace();
+							}
 						}
 					}
 					gameover=true;
@@ -744,7 +753,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 		dptLeft = DEATH_PAUSE_TICKS;
 		SoundManager.get().play(Sound.CRAWLERDEATH);
 		if (this.connector != null) {
-			connector.sendStringDataByTCP(connector.getPlayerName() + " has lost a life!");
+			try {
+				connector.sendStringDataByTCP(connector.getPlayerName() + " has lost a life!");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		if (lives <= 0) {
 			this.saveHiScore();
@@ -880,7 +894,12 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 			synchronized (scores) {
 				this.scores.put(connector.getPlayerName(), score);
 			}
-			this.connector.sendKeyValueDataByUDP(CODE_CURRENT_SCORE, score);
+			try {
+				this.connector.sendKeyValueDataByUDP(CODE_CURRENT_SCORE, score);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -919,7 +938,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	}
 
 	@Override
-	public void dataReceivedByTCP(int fromplayerid, int key, int value) {
+	public void keyValueReceivedByTCP(int fromplayerid, int key, int value) {
 		try {
 			String player = connector.getPlayerByID(fromplayerid).name;
 			if (key == CODE_LEVEL_NUMBER) {
@@ -938,7 +957,7 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	}
 
 	@Override
-	public void dataReceivedByUDP(long time, int fromplayerid, int key, int value) {
+	public void keyValueReceivedByUDP(long time, int fromplayerid, int key, int value) {
 		ClientPlayerData player = this.connector.getPlayerByID(fromplayerid);
 		if (player != null) {
 			// Update their score
@@ -949,22 +968,22 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 	}
 
 	@Override
-	public void dataReceivedByTCP(int fromplayerid, String data) {
+	public void stringReceivedByTCP(int fromplayerid, String data) {
 		this.multiplayer_msg = data;
 	}
 
 	@Override
-	public void dataReceivedByUDP(long time, int fromplayerid, String data) {
+	public void stringReceivedByUDP(long time, int fromplayerid, String data) {
 		this.multiplayer_msg = data;
 	}
 
 	@Override
-	public void dataReceivedByTCP(int fromplayerid, byte[] data) {
+	public void byteArrayReceivedByTCP(int fromplayerid, byte[] data) {
 
 	}
 
 	@Override
-	public void dataReceivedByUDP(long time, int fromplayerid, byte[] data) {
+	public void byteArrayReceivedByUDP(long time, int fromplayerid, byte[] data) {
 
 	}
 	@Override
@@ -1005,6 +1024,18 @@ public class Board extends JPanel implements ActionListener, IGameClient {
 
 	public static void p(String s) {
 		System.out.println(s);
+	}
+
+
+	@Override
+	public void objectReceivedByTCP(int fromplayerid, Object obj) throws IOException {
+		
+	}
+
+
+	@Override
+	public void objectReceivedByUDP(long time, int fromplayerid, Object obj) throws IOException {
+		
 	}
 
 }

@@ -4,6 +4,6 @@
 	<classpathentry kind="src" path="audio"/>
 	<classpathentry kind="src" path="fonts"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/GenericMultiplayerClient"/>
+	<classpathentry kind="lib" path="libs/GMCClient.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
