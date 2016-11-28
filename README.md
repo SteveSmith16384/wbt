@@ -41,3 +41,5 @@ arrow keys to move, spacebar to fire, and "S" to superzap.
 * Original game programmed by alwzac (https://github.com/awlzac)
 * Multiplayer added by Stephen Carlyle-Smith (https://github.com/SteveSmith16384/)
 
+### Licence
+Licence as per the pre-forked code, i.e. whatever is specified at https://github.com/awlzac/wbt .  Currently none as far as I can see.
